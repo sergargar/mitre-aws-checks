@@ -1,0 +1,1 @@
+# mitre-aws-checks
