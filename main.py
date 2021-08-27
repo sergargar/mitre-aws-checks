@@ -27,7 +27,23 @@ def main ():
 
 	#s3_buckets_versioned()
 
-	ebs_volumes_encrypted()
+	#ebs_volumes_encrypted()
+
+	#ebs_volumes_with_snapshot()
+
+	password_length = 15
+	password_expiration_days = 90
+	last_passwords_reuse = 3
+	#strong_password_policy(password_length,password_expiration_days,last_passwords_reuse)
+
+	# Generate JobID with generate_service_last_accessed_details(Arn=<entityArn>,Granularity='ACTION_LEVEL')
+	JobId='c6bdc470-49cb-bc0b-cdc3-dc8380c892cb'
+	days_without_being_used = 2
+	#least_privilege_iam(JobId, days_without_being_used)
+
+	#config_enabled()
+
+	guardduty_enabled()
 
 def mfa_is_enabled():
 	print (colored("\n\n++++++++++++++ Check 1: MFAisEnabled ++++++++++++++",'yellow'))
@@ -116,7 +132,7 @@ def ec2_public_ports():
 						port_open = 1
 						ports = ports + str(rule['FromPort']) + " "
 			if port_open == 1 :
-				print (colored("FAIL: Security group "+sg['GroupName']+" has open port(s) (" + ports +").",'red'))
+				print (colored("FAIL: Security group "+sg['GroupName']+" has open port(s) ( " + ports +").",'red'))
 			else:
 				print (colored("OK: Security group "+sg['GroupName']+" has NO open ports.",'green'))
 
@@ -194,6 +210,119 @@ def ebs_volumes_encrypted():
 		print (colored("OK: There are no unencrypted EBS volumes.",'green'))
 	else:
 		print (colored("FAIL: The EBS volume(s) "+unencrypted_volumes+"are unencrypted.",'red'))
+
+def ebs_volumes_with_snapshot():
+	print (colored("\n\n++++++++++++++ Check 9: EBSVolumesWithSnapshot ++++++++++++++",'yellow'))	
+	# Ensure there are no unencrypted EBS volumes
+	client = boto3.client('ec2')
+	volumes_without = ""
+	describe_volumes_paginator = client.get_paginator('describe_volumes')
+	for page in describe_volumes_paginator.paginate():
+		for volume in page['Volumes']:
+			if 'SnapshotId' not in volume:
+				volumes_without = volumes_without + volume['VolumeId'] + " "
+	if volumes_without == "" :
+		print (colored("OK: There are no EBS volumes without snapshots.",'green'))
+	else:
+		print (colored("FAIL: The EBS volume(s) "+volumes_without+"are unencrypted.",'red'))
+
+def strong_password_policy(length,expiration,reuse):
+	print (colored("\n\n++++++++++++++ Check 10: StrongPasswordPolicy ++++++++++++++",'yellow'))	
+	# Ensure there is a strong password policy
+	client = boto3.client('iam')
+	try:
+		account_policy = client.get_account_password_policy()['PasswordPolicy']
+		strong_password = True
+
+		if account_policy ['MinimumPasswordLength'] < length:
+			strong_password = False
+
+		if not account_policy ['RequireUppercaseCharacters'] or not account_policy ['RequireLowercaseCharacters'] or not account_policy ['RequireNumbers'] or not account_policy ['RequireSymbols']:
+			strong_password = False
+
+		if account_policy ['ExpirePasswords']:
+			if account_policy ['MaxPasswordAge'] < expiration:
+				strong_password = False
+		else:
+			strong_password = False
+
+		if 'PasswordReusePrevention' in account_policy:
+			if account_policy ['PasswordReusePrevention'] < reuse:
+				strong_password = False
+		else:
+			strong_password = False
 		
+		if not strong_password:
+			print (colored("FAIL: Password policy is not strong.",'red'))
+		else: 
+			print(colored("OK: Password policy is strong.",'green'))
+
+	except client.exceptions.NoSuchEntityException:
+		print(colored("FAIL: Password policy does not exist.",'red'))
+		pass
+
+def least_privilege_iam(JobId,days):
+	print (colored("\n\n++++++++++++++ Check 11: LeastPrivilegeIAM ++++++++++++++",'yellow'))	
+	# Ensure there are no permissions without being used
+	client = boto3.client('iam')
+	date = datetime.datetime.now().replace(tzinfo=tzutc())
+	not_acessed_services = ""
+	not_used_actions = ""
+	advisor = client.get_service_last_accessed_details(JobId=JobId)
+	for service in advisor['ServicesLastAccessed']:
+		if service['TotalAuthenticatedEntities'] < 1:
+			not_acessed_services = not_acessed_services + '\n' + service['ServiceName']
+		elif 'TrackedActionsLastAccessed' in service:
+			not_used_actions = not_used_actions + '\n' + service['ServiceName'] +": "
+			for action in service['TrackedActionsLastAccessed']:
+				if 'LastAccessedTime' in action:
+					access_time = action['LastAccessedTime']
+					if date+datetime.timedelta(days=-days) < access_time:
+						not_used_actions = not_used_actions + action['ActionName'] + " "
+				else:
+					not_used_actions = not_used_actions + action['ActionName'] + " "
+		else:
+			access_time = service['LastAuthenticated']
+			if date+datetime.timedelta(days=-days) < access_time:
+					not_acessed_services = not_acessed_services + '\n' + service['ServiceName']
+	if not_acessed_services == "" and not_used_actions=="" :
+		print (colored("OK: AWS IAM is compliant with least privilege principle.",'green'))
+	else: 
+		print(colored("FAIL: The following services and/or actions are not being used:\n"+not_acessed_services+not_used_actions,'red'))
+
+def config_enabled():
+	print (colored("\n\n++++++++++++++ Check 12: ConfigEnabled ++++++++++++++",'yellow'))	
+	# Ensure Config service is active
+	client = boto3.client('config')
+	config_active = True
+	response = client.describe_configuration_recorder_status()['ConfigurationRecordersStatus']
+	if response == []:
+		config_active = False
+	else:
+		for recorder in response:
+			if not recorder['recording']:
+				config_active = False
+	if config_active:
+		print (colored("OK: AWS Config is tracking configuration changes.",'green'))
+	else: 
+		print(colored("FAIL: AWS Config is not enabled",'red'))
+
+def guardduty_enabled():
+	print (colored("\n\n++++++++++++++ Check 13: GuardDutyEnabled ++++++++++++++",'yellow'))	
+	# Ensure Config service is active
+	client = boto3.client('config')
+	config_active = True
+	response = client.describe_configuration_recorder_status()['ConfigurationRecordersStatus']
+	if response == []:
+		config_active = False
+	else:
+		for recorder in response:
+			if not recorder['recording']:
+				config_active = False
+	if config_active:
+		print (colored("OK: AWS Config is tracking configuration changes.",'green'))
+	else: 
+		print(colored("FAIL: AWS Config is not enabled",'red'))
+
 if __name__ == "__main__":
 	main()
