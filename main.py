@@ -4,7 +4,7 @@ import os
 import re
 import datetime
 import botocore.exceptions
-from dateutil.tz import tzutc
+from dateutil.tz import tzutc,tzlocal
 from botocore.client import ClientError
 from termcolor import colored
 
@@ -37,14 +37,21 @@ def main ():
 	#strong_password_policy(password_length,password_expiration_days,last_passwords_reuse)
 
 	# Generate JobID with generate_service_last_accessed_details(Arn=<entityArn>,Granularity='ACTION_LEVEL')
-	JobId='c6bdc470-49cb-bc0b-cdc3-dc8380c892cb'
+	JobId='86bdc5fb-cad5-dff2-f957-1ab20213568b'
 	days_without_being_used = 2
 	#least_privilege_iam(JobId, days_without_being_used)
 
 	#config_enabled()
 
-	guardduty_enabled()
+	#guardduty_enabled()
 
+	days_since_last_assessment = 4
+	#inspector_enabled(days_since_last_assessment)
+
+	#cloudtrail_multiregion_enabled()
+
+	#vpc_flow_logs_enabled()
+	
 def mfa_is_enabled():
 	print (colored("\n\n++++++++++++++ Check 1: MFAisEnabled ++++++++++++++",'yellow'))
 	# Ensure hardware MFA is enabled for the root account
@@ -277,13 +284,13 @@ def least_privilege_iam(JobId,days):
 			for action in service['TrackedActionsLastAccessed']:
 				if 'LastAccessedTime' in action:
 					access_time = action['LastAccessedTime']
-					if date+datetime.timedelta(days=-days) < access_time:
+					if date+datetime.timedelta(days=-days) > access_time:
 						not_used_actions = not_used_actions + action['ActionName'] + " "
 				else:
 					not_used_actions = not_used_actions + action['ActionName'] + " "
 		else:
 			access_time = service['LastAuthenticated']
-			if date+datetime.timedelta(days=-days) < access_time:
+			if date+datetime.timedelta(days=-days) > access_time:
 					not_acessed_services = not_acessed_services + '\n' + service['ServiceName']
 	if not_acessed_services == "" and not_used_actions=="" :
 		print (colored("OK: AWS IAM is compliant with least privilege principle.",'green'))
@@ -309,20 +316,64 @@ def config_enabled():
 
 def guardduty_enabled():
 	print (colored("\n\n++++++++++++++ Check 13: GuardDutyEnabled ++++++++++++++",'yellow'))	
-	# Ensure Config service is active
-	client = boto3.client('config')
-	config_active = True
-	response = client.describe_configuration_recorder_status()['ConfigurationRecordersStatus']
-	if response == []:
-		config_active = False
+	# Ensure GuardDuty service is active
+	client = boto3.client('guardduty')
+	response = client.list_detectors()
+	if response['DetectorIds'] == []:
+		print(colored("FAIL: AWS GuardDuty is not enabled",'red'))
 	else:
-		for recorder in response:
-			if not recorder['recording']:
-				config_active = False
-	if config_active:
-		print (colored("OK: AWS Config is tracking configuration changes.",'green'))
-	else: 
-		print(colored("FAIL: AWS Config is not enabled",'red'))
+		print (colored("OK: AWS GuardDuty is monitoring for malicious behavior.",'green'))
+
+def inspector_enabled(days):
+	print (colored("\n\n++++++++++++++ Check 14: InspectorEnabled ++++++++++++++",'yellow'))	
+	# Ensure Inspector service is active
+	client = boto3.client('inspector')
+	response = client.list_assessment_templates()
+	inspector_active = True
+	date = datetime.datetime.now().replace(tzinfo=tzlocal())
+	if response['assessmentTemplateArns'] == []:
+		inspector_active = False
+	for template in response['assessmentTemplateArns']:
+		runs = client.list_assessment_runs(assessmentTemplateArns=[template])
+		for run in runs['assessmentRunArns']:
+			response = client.describe_assessment_runs(assessmentRunArns=[run])
+			if date+datetime.timedelta(days=-days) > response['assessmentRuns'][0]['completedAt']:
+				inspector_active = False
+	if not inspector_active:
+		print(colored("FAIL: AWS Inspector is not enabled or assessment was not run within the last "+str(days)+" days.",'red'))
+	else:
+		print (colored("OK: AWS Inspector has run an assessment within the last "+str(days)+" days.",'green'))
+
+def cloudtrail_multiregion_enabled():
+	print (colored("\n\n++++++++++++++ Check 15: CloudTrailMultiRegionEnabled ++++++++++++++",'yellow'))	
+	# Ensure CloudTrail service is active and all trails are multiregion
+	client = boto3.client('cloudtrail', region_name='eu-west-1')
+	response = client.describe_trails()
+	trails_not_multiregion = ""
+	for trail in response['trailList']:
+		if not trail['IsMultiRegionTrail']:
+			trails_not_multiregion = trails_not_multiregion + trail['Name'] + " "
+	if response['trailList'] == []:
+		print(colored("FAIL: Cloudtrail is not enabled.",'red'))
+	if trails_not_multiregion == "" :
+		print (colored("OK: All CloudTrail trail(s) are multiregion.",'green'))
+	else:
+		print(colored("FAIL: The CloudTrail trail(s) "+trails_not_multiregion+"are not multiregion.",'red'))
+
+def vpc_flow_logs_enabled():
+	print (colored("\n\n++++++++++++++ Check 16: VPCFlowLogsEnabled ++++++++++++++",'yellow'))	
+	# Ensure VPC Flow logs are enabled for all VPCs
+	client = boto3.client('ec2')
+	response = client.describe_vpcs()
+	vpc_without_logs = ""
+	for vpc in response['Vpcs']:
+		flow_logs = client.describe_flow_logs(Filters=[{'Name':'resource-id','Values':[vpc['VpcId']]}])
+		if flow_logs['FlowLogs'] == []:
+			vpc_without_logs = vpc_without_logs + vpc['VpcId']+ " "
+	if vpc_without_logs == "" :
+		print (colored("OK: All VPCs has Flow Logs activated.",'green'))
+	else:
+		print(colored("FAIL: The VPC(s) "+vpc_without_logs+"have no active Flow Logs.",'red'))
 
 if __name__ == "__main__":
 	main()

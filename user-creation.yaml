@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: User for executing mitre verification script.
+
+Parameters:
+  NameforUser:
+    Type: String
+    Description: Name for script user
+
+Resources:
+  CFNUser:
+    Type: AWS::IAM::User
+    Properties:
+      UserName: !Ref 'NameforUser'
+  CFNUserPolicy:
+    Type: AWS::IAM::Policy
+    Properties:
+      PolicyName: mitre-verification-script
+      PolicyDocument:
+        Statement:
+          -
+            Effect: Allow
+            Action:
+              - "cloudtrail:describetrails"
+              - "config:describeconfigurationrecorderstatus"
+              - "guardduty:listdetectors"
+              - "inspector:listassessmenttemplates"
+              - "inspector:listassessmentruns"
+              - "inspector:describeassessmentruns"
+              - "ec2:describeflowlogs"
+              - "ec2:describevolumes"
+              - "ec2:describevpcs"
+              - "ec2:describesecuritygroups"
+              - "s3:getaccountpublicaccessblock"
+              - "s3:ListAllMyBuckets"
+              - "s3:GetBucketPublicAccessBlock"
+              - "s3:GetEncryptionConfiguration"
+              - "s3:GetBucketVersioning"
+              - "iam:GetAccountSummary"
+              - "iam:ListUsers"
+              - "iam:ListAccessKeys"
+              - "iam:ListMFADevices"
+              - "iam:GetServiceLastAccessedDetails"
+              - "iam:ListVirtualMFADevices"
+              - "iam:GenerateServiceLastAccessedDetails"
+              - "iam:GetAccountPasswordPolicy"
+            Resource: "*"
+      Users: 
+        - !Ref CFNUser
+  CFNKeys:
+    Type: AWS::IAM::AccessKey
+    Properties:
+      UserName: !Ref 'CFNUser'
+
+Outputs:
+  AccessKey:
+    Value: !Ref 'CFNKeys'
+    Description: AWSAccessKeyId of new user
+  SecretKey:
+    Value: !GetAtt [CFNKeys, SecretAccessKey]
+    Description: AWSSecretAccessKey of new user
