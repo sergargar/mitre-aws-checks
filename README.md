@@ -44,7 +44,7 @@ python3 main.py
 ```
 
 
-## MITRE ATT&CK Mapping
+## MITRE ATT&CK Relationship
 
 * The functions of the script can mitigate the following adversary techniques that are describe in the [IaaS Matrix](https://attack.mitre.org/matrices/enterprise/cloud/iaas/):
 
