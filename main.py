@@ -10,47 +10,47 @@ from termcolor import colored
 
 def main ():
 
-	#mfa_is_enabled()
+	mfa_is_enabled()
 
 	days_without_access = 15
-	#inactive_users(days_without_access)
+	inactive_users(days_without_access)
 
 	keys_older_than_days = 5
-	#access_keys_rotation(keys_older_than_days)
+	access_keys_rotation(keys_older_than_days)
 
-	#ec2_public_ports()
+	ec2_public_ports()
 
 	account = '198604771934'
-	#s3_public_access(account)
+	s3_public_access(account)
 
-	#s3_buckets_encrypted()
+	s3_buckets_encrypted()
 
-	#s3_buckets_versioned()
+	s3_buckets_versioned()
 
-	#ebs_volumes_encrypted()
+	ebs_volumes_encrypted()
 
-	#ebs_volumes_with_snapshot()
+	ebs_volumes_with_snapshot()
 
 	password_length = 15
 	password_expiration_days = 90
 	last_passwords_reuse = 3
-	#strong_password_policy(password_length,password_expiration_days,last_passwords_reuse)
+	strong_password_policy(password_length,password_expiration_days,last_passwords_reuse)
 
 	# Generate JobID with generate_service_last_accessed_details(Arn=<entityArn>,Granularity='ACTION_LEVEL')
-	JobId='86bdc5fb-cad5-dff2-f957-1ab20213568b'
-	days_without_being_used = 2
-	#least_privilege_iam(JobId, days_without_being_used)
+	JobId='64bdcbf0-f0c2-dd3f-efb0-3126208b524f'
+	days_without_being_used = 7
+	least_privilege_iam(JobId, days_without_being_used)
 
-	#config_enabled()
+	config_enabled()
 
-	#guardduty_enabled()
+	guardduty_enabled()
 
 	days_since_last_assessment = 4
-	#inspector_enabled(days_since_last_assessment)
+	inspector_enabled(days_since_last_assessment)
 
-	#cloudtrail_multiregion_enabled()
+	cloudtrail_multiregion_enabled()
 
-	#vpc_flow_logs_enabled()
+	vpc_flow_logs_enabled()
 	
 def mfa_is_enabled():
 	print (colored("\n\n++++++++++++++ Check 1: MFAisEnabled ++++++++++++++",'yellow'))
@@ -122,7 +122,7 @@ def access_keys_rotation(days):
 			if older_keys == 0 :
 				print(colored("FAIL: User "+user['UserName']+" has keys older than " +str(days)+ " days ("+str(keys_time.days)+" days).",'red'))
 			else:
-				print(colored("OK: User "+user['UserName']+" has NOT keys older than " +str(days)+ ".",'green'))
+				print(colored("OK: User "+user['UserName']+" has NOT keys older than " +str(days)+ " days.",'green'))
 
 def ec2_public_ports():
 	print (colored("\n\n++++++++++++++ Check 4: EC2PublicPorts ++++++++++++++",'yellow'))
@@ -144,7 +144,7 @@ def ec2_public_ports():
 				print (colored("OK: Security group "+sg['GroupName']+" has NO open ports.",'green'))
 
 def s3_public_access(account):
-	print (colored("\n\n++++++++++++++ Check 5: EC2PublicPorts ++++++++++++++",'yellow'))	
+	print (colored("\n\n++++++++++++++ Check 5: S3PublicAccess ++++++++++++++",'yellow'))	
 	# Ensure there are no public S3 buckets
 	s3 = boto3.resource('s3')
 	s3_client = boto3.client('s3')
@@ -159,7 +159,11 @@ def s3_public_access(account):
 	if bucket_account_is_public:
 		# 2. If public access is not blocked at account level, check it at each bucket level
 		for bucket in bucket_list:
-			bucket_public_access = s3_client.get_public_access_block(Bucket = bucket)['PublicAccessBlockConfiguration']
+			try:
+				bucket_public_access = s3_client.get_public_access_block(Bucket = bucket)['PublicAccessBlockConfiguration']
+			except ClientError:
+				pass
+				public_buckets = public_buckets + bucket + " "
 			if not bucket_public_access['IgnorePublicAcls'] and not account_bucket_public_access['RestrictPublicBuckets']:
 				public_buckets = public_buckets + bucket + " "
 	if public_buckets == "" and not bucket_account_is_public:
@@ -272,6 +276,7 @@ def least_privilege_iam(JobId,days):
 	print (colored("\n\n++++++++++++++ Check 11: LeastPrivilegeIAM ++++++++++++++",'yellow'))	
 	# Ensure there are no permissions without being used
 	client = boto3.client('iam')
+	#print(client.generate_service_last_accessed_details(Arn="arn:aws:iam::198604771934:user/sergio.garcia",Granularity='ACTION_LEVEL'))
 	date = datetime.datetime.now().replace(tzinfo=tzutc())
 	not_acessed_services = ""
 	not_used_actions = ""
@@ -295,7 +300,7 @@ def least_privilege_iam(JobId,days):
 	if not_acessed_services == "" and not_used_actions=="" :
 		print (colored("OK: AWS IAM is compliant with least privilege principle.",'green'))
 	else: 
-		print(colored("FAIL: The following services and/or actions are not being used:\n"+not_acessed_services+not_used_actions,'red'))
+		print(colored("FAIL: The following services and/or actions are not being used in the last " +str(days)+ " days:\n"+not_acessed_services+not_used_actions,'red'))
 
 def config_enabled():
 	print (colored("\n\n++++++++++++++ Check 12: ConfigEnabled ++++++++++++++",'yellow'))	
