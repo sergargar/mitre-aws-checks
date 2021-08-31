@@ -1,4 +1,4 @@
-# Script for AWS Compliance Verifications
+# Script for AWS Compliance Checks
 
 Script for analyzing the compliance of your AWS account based on the adversary techniques on the [MITRE ATT&CK Iaas Matrix](https://attack.mitre.org/matrices/enterprise/cloud/iaas/).
 
@@ -19,8 +19,38 @@ pip3 install boto3 termcolor
 
 ### User Creation
 
-* How/where to download your program
-* Any modifications needed to be made to files/folders
+* The script needs the following permissions to run all the checks:
+```
+cloudtrail:describetrails
+config:describeconfigurationrecorderstatus
+guardduty:listdetectors
+inspector:listassessmenttemplates
+inspector:listassessmentruns
+inspector:describeassessmentruns
+ec2:describeflowlogs
+ec2:describevolumes
+ec2:describevpcs
+ec2:describesecuritygroups
+s3:getaccountpublicaccessblock
+s3:ListAllMyBuckets
+s3:GetBucketPublicAccessBlock
+s3:GetEncryptionConfiguration
+s3:GetBucketVersioning
+iam:GetAccountSummary
+iam:ListUsers
+iam:ListAccessKeys
+iam:ListMFADevices
+iam:GetServiceLastAccessedDetails
+iam:ListVirtualMFADevices
+iam:GenerateServiceLastAccessedDetails
+iam:GetAccountPasswordPolicy
+```
+* To facilitate the creation of these permissions, this repository has a [CloudFormation template](https://github.com/sergargar/mitre-aws-checks/blob/main/user-creation.yaml) to automatically deploy an user with the necessary permissions.
+* Once the stack is created with the template, it gives you the access and secret keys of the new user in the Output Section.
+* Finally, both the output credentials and the region to be analyzed must be configured locally through the following command:
+```
+aws configure
+```
 
 ### Customize verification functions
 
