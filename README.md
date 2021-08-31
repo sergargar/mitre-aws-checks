@@ -21,7 +21,7 @@ pip3 install boto3 termcolor
 * How/where to download your program
 * Any modifications needed to be made to files/folders
 
-### Customize verification functions
+### Customize verification functions
 
 * The following parameters can be customized in some functions:
 
@@ -43,7 +43,7 @@ python3 main.py
 ```
 
 
-## MITRE ATT&CK Mapping
+## MITRE ATT&CK Mapping
 
 * The functions of the script can mitigate the following adversary techniques that are describe in the [IaaS Matrix](https://attack.mitre.org/matrices/enterprise/cloud/iaas/):
 
