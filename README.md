@@ -21,7 +21,21 @@ pip3 install boto3 termcolor
 * How/where to download your program
 * Any modifications needed to be made to files/folders
 
-### Customize verifications
+### Customize verification functions
+
+* The following parameters can be customized in some functions:
+* 
+| Función                 | Parámetro                                                                                          | Descripción                                                                                                                                                                                           |
+|-------------------------|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| inactive_users          | days_without_access                                                                                | Días sin acceder de un usuario para que se considere como inactivo.                                                                                                                                   |
+| access_keys_rotation    | keys_older_than_days                                                                               | Días de antigüedad de las llaves de acceso para que se roten.                                                                                                                                         |
+| s3_public_access        | account                                                                                            | Cuenta AWS donde se quiere verificar las políticas de acceso público de S3.                                                                                                                           |
+| strong_password_policy  | password_length                                                                                    | Longitud mínima y máximo de días de expiración de las contraseñas, y el número de últimas contraseñas que no se pueden reutilizar, requerido en la política de contraseñas de la cuenta AWS.          |
+|                         | password_expiration_days                                                                           |                                                                                                                                                                                                       |
+|                         | last_passwords_reuse                                                                               |                                                                                                                                                                                                       |
+| least_privilege_iam     | JobId                                                                                              | ID del job que el usuario ha generado previamente con la llamada de AWS generate_service_last_accessed_details(Arn=<entityArn>,Granularity='ACTION_LEVEL'), eligiendo la entidad que quiere analizar. |
+| days_without_being_used | Días sin utilizar un servicio y/o acciones por una entidad para que se considere como inutilizado. |                                                                                                                                                                                                       |
+| inspector_enabled       | days_since_last_assessment                                                                         | Días desde la última evaluación de Inspector para que se considere como no cumplido.                                                                                                                  |
 
 ### Executing program
 
