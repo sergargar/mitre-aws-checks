@@ -1,6 +1,7 @@
 # Script for AWS Compliance Verifications
 
-Simple overview of use/purpose.
+Script for analyzing the compliance of your AWS account based on the adversary techniques on the [MITRE ATT&CK Iaas Matrix](https://attack.mitre.org/matrices/enterprise/cloud/iaas/).
+
 
 ## Description
 
