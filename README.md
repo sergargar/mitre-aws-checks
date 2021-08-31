@@ -47,6 +47,7 @@ python3 main.py
 
 * The functions of the script can mitigate the following adversary techniques that are describe in the [IaaS Matrix](https://attack.mitre.org/matrices/enterprise/cloud/iaas/):
 
+![Alt text](mitre-relationship.png?raw=true "Title")
 
 
 ## Version History
