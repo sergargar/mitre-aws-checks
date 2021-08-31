@@ -24,7 +24,7 @@ pip3 install boto3 termcolor
 ### Customize verification functions
 
 * The following parameters can be customized in some functions:
-* 
+
 | Function                 | Input Parameter                                                                                          | Description                                                                                                                                                                                           |
 |-------------------------|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | inactive_users          | days_without_access                                                                                | Días sin acceder de un usuario para que se considere como inactivo.                                                                                                                                   |
