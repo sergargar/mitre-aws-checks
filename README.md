@@ -22,7 +22,6 @@ pip3 install boto3 termcolor
 * Any modifications needed to be made to files/folders
 
 ### Customize verifications
-*
 
 ### Executing program
 
@@ -33,7 +32,7 @@ python3 main.py
 
 ## MITRE ATT&CK Mapping
 
-* The functions of the script can mitigate the following adversary techniques that are describe in the [IaaS MAtrix](https://attack.mitre.org/matrices/enterprise/cloud/iaas/):
+* The functions of the script can mitigate the following adversary techniques that are describe in the [IaaS Matrix](https://attack.mitre.org/matrices/enterprise/cloud/iaas/):
 
 
 
