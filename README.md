@@ -25,7 +25,7 @@ pip3 install boto3 termcolor
 
 * The following parameters can be customized in some functions:
 * 
-| Función                 | Parámetro                                                                                          | Descripción                                                                                                                                                                                           |
+| Function                 | Input Parameter                                                                                          | Description                                                                                                                                                                                           |
 |-------------------------|----------------------------------------------------------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | inactive_users          | days_without_access                                                                                | Días sin acceder de un usuario para que se considere como inactivo.                                                                                                                                   |
 | access_keys_rotation    | keys_older_than_days                                                                               | Días de antigüedad de las llaves de acceso para que se roten.                                                                                                                                         |
