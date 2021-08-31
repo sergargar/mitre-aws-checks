@@ -3,10 +3,6 @@
 Script for analyzing the compliance of your AWS account based on the adversary techniques on the [MITRE ATT&CK Iaas Matrix](https://attack.mitre.org/matrices/enterprise/cloud/iaas/).
 
 
-## Description
-
-An in-depth paragraph about your project and overview of use.
-
 ## Getting Started
 
 ### Dependencies
